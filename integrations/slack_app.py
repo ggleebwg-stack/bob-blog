@@ -3,8 +3,12 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import logging
+import os
 import time
 import urllib.parse
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, BackgroundTasks, Request
 from fastapi.responses import JSONResponse
@@ -44,22 +48,17 @@ def verify_slack_signature(
 
 async def queue_write_job(topic: str, user_id: str, channel_id: str) -> None:
     """Placeholder: log the job request. Will be wired to jobs/slack_jobs.py."""
-    import logging
-    logging.getLogger(__name__).info(
-        "Job queued: topic=%r user=%r channel=%r", topic, user_id, channel_id
-    )
+    logger.info("Job queued: topic=%r user=%r channel=%r", topic, user_id, channel_id)
 
 
 def handle_publish(job_id: str, response_url: str) -> None:
-    """Placeholder: log publish request."""
-    import logging
-    logging.getLogger(__name__).info("Publish requested for job %r", job_id)
+    """Placeholder: log publish request. TODO: wire to jobs/slack_jobs.publish_job()"""
+    logger.info("Publish requested for job %r (response_url=%r)", job_id, response_url)
 
 
 def handle_reject(job_id: str, response_url: str) -> None:
-    """Placeholder: log reject request."""
-    import logging
-    logging.getLogger(__name__).info("Reject requested for job %r", job_id)
+    """Placeholder: log reject request. TODO: wire to jobs/slack_jobs.reject_job()"""
+    logger.info("Reject requested for job %r (response_url=%r)", job_id, response_url)
 
 
 # ---------------------------------------------------------------------------
@@ -71,8 +70,6 @@ async def slack_commands(
     request: Request,
     background_tasks: BackgroundTasks,
 ) -> JSONResponse:
-    import os
-
     # Read raw body FIRST so it is available for both signature check and parsing
     body = await request.body()
 
@@ -114,9 +111,10 @@ async def slack_commands(
 
 
 @router.post("/interactivity")
-async def slack_interactivity(request: Request) -> JSONResponse:
-    import os
-
+async def slack_interactivity(
+    request: Request,
+    background_tasks: BackgroundTasks,
+) -> JSONResponse:
     # Read raw body FIRST
     body = await request.body()
 
@@ -147,8 +145,8 @@ async def slack_interactivity(request: Request) -> JSONResponse:
     response_url = data.get("response_url", "")
 
     if action_id == "publish":
-        handle_publish(job_id, response_url)
+        background_tasks.add_task(handle_publish, job_id, response_url)
     elif action_id == "reject":
-        handle_reject(job_id, response_url)
+        background_tasks.add_task(handle_reject, job_id, response_url)
 
     return JSONResponse({}, status_code=200)
