@@ -47,18 +47,28 @@ def verify_slack_signature(
 # ---------------------------------------------------------------------------
 
 async def queue_write_job(topic: str, user_id: str, channel_id: str) -> None:
-    """Placeholder: log the job request. Will be wired to jobs/slack_jobs.py."""
-    logger.info("Job queued: topic=%r user=%r channel=%r", topic, user_id, channel_id)
+    """Create a job record and run the full pipeline as a background task."""
+    from jobs.slack_jobs import create_job, run_job
+
+    job_id = create_job(topic, user_id, channel_id)
+    logger.info("Job created: %s  topic=%r", job_id, topic)
+    # NOTE: runs synchronously inside the FastAPI background task worker for now.
+    # Replace with Celery / ARQ / asyncio.create_task for true async execution.
+    run_job(job_id)
 
 
 def handle_publish(job_id: str, response_url: str) -> None:
-    """Placeholder: log publish request. TODO: wire to jobs/slack_jobs.publish_job()"""
-    logger.info("Publish requested for job %r (response_url=%r)", job_id, response_url)
+    """Publish the reviewed job to Blogger."""
+    from jobs.slack_jobs import publish_job
+
+    publish_job(job_id, response_url)
 
 
 def handle_reject(job_id: str, response_url: str) -> None:
-    """Placeholder: log reject request. TODO: wire to jobs/slack_jobs.reject_job()"""
-    logger.info("Reject requested for job %r (response_url=%r)", job_id, response_url)
+    """Reject the reviewed job."""
+    from jobs.slack_jobs import reject_job
+
+    reject_job(job_id, response_url)
 
 
 # ---------------------------------------------------------------------------
