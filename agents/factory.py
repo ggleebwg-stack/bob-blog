@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import logging
 import os
+
+logger = logging.getLogger(__name__)
 
 from .base import BlogAgent
 
@@ -69,8 +72,11 @@ def get_agent(task: str = "write") -> BlogAgent:
         try:
             return _build_agent(name)
         except Exception as exc:
-            last_exc = exc  # noqa: F841
+            last_exc = exc
+            logger.debug("Agent backend %r failed: %s", name, exc)
             continue
 
+    if last_exc is not None:
+        logger.debug("All chain backends failed, falling back to EngineLoader")
     # All chain entries failed (or chain is empty) — fall back to EngineLoader
     return _wrap_engine_loader()

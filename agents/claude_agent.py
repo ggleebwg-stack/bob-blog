@@ -12,8 +12,6 @@ class ClaudeAgent:
         self._model = model
 
     def _call(self, prompt: str, system: str = "") -> str:
-        import anthropic
-
         kwargs: dict = {
             "model": self._model,
             "max_tokens": 4096,
