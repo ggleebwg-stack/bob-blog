@@ -5,6 +5,7 @@ service_account*.json
 *_secret*.json
 *_key*.json
 !config/safety_keywords.json
+!config/boost_keywords.json
 
 venv/
 .venv/

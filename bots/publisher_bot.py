@@ -519,11 +519,6 @@ def save_pending_review(article: dict, reason: str):
     return pending_dir / filename
 
 
-def load_pending_review_file(filepath: str) -> dict:
-    with open(filepath, 'r', encoding='utf-8') as f:
-        return json.load(f)
-
-
 def _resolve_publish_targets(platform: str) -> list[str]:
     normalized = (platform or 'blogger').strip().lower()
     mapping = {
@@ -703,21 +698,6 @@ def reject_pending(filepath: str):
         logger.info(f"수동 검토 거부: {filepath}")
     except Exception as e:
         logger.error(f"거부 처리 실패: {e}")
-
-
-def get_pending_list() -> list[dict]:
-    """수동 검토 대기 목록 반환"""
-    pending_dir = DATA_DIR / 'pending_review'
-    pending_dir.mkdir(exist_ok=True)
-    result = []
-    for f in sorted(pending_dir.glob('*_pending.json')):
-        try:
-            data = json.loads(f.read_text(encoding='utf-8'))
-            data['_filepath'] = str(f)
-            result.append(data)
-        except Exception:
-            pass
-    return result
 
 
 if __name__ == '__main__':
