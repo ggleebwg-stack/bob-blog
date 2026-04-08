@@ -13,6 +13,7 @@ import json
 import logging
 import os
 import uuid
+from os import replace as _os_replace
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -35,6 +36,13 @@ PENDING_DIR = DATA_DIR / "pending_review"
 
 def _job_path(job_id: str) -> Path:
     return PENDING_DIR / f"job_{job_id}.json"
+
+
+def _write_job_atomic(path: Path, job: dict) -> None:
+    """Write job dict atomically (tmp + os.replace) to avoid partial-write corruption."""
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(job, ensure_ascii=False, indent=2), encoding="utf-8")
+    _os_replace(tmp, path)
 
 
 def _now_iso() -> str:
@@ -66,9 +74,7 @@ def create_job(topic: str, user_id: str, channel_id: str) -> str:
         },
     }
     PENDING_DIR.mkdir(parents=True, exist_ok=True)
-    _job_path(job_id).write_text(
-        json.dumps(job, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    _write_job_atomic(_job_path(job_id), job)
     logger.info("Job created: %s  topic=%r", job_id, topic)
     return job_id
 
@@ -93,9 +99,7 @@ def update_job(job_id: str, **kwargs) -> dict:
         job["result"] = {**job.get("result", {}), **kwargs.pop("result")}
     job.update(kwargs)
     job["updated_at"] = _now_iso()
-    _job_path(job_id).write_text(
-        json.dumps(job, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    _write_job_atomic(_job_path(job_id), job)
     return job
 
 
@@ -161,6 +165,8 @@ def _notify_slack_preview(job_id: str) -> None:
         logger.info("Preview notification sent for job %s", job_id)
     except Exception as exc:
         logger.error("Failed to send Slack preview for job %s: %s", job_id, exc)
+        # Store flag so retries/monitoring can detect the missed notification
+        update_job(job_id, notification_failed=True, notification_error=str(exc))
 
 
 def _notify_slack_error(job_id: str, error: str) -> None:

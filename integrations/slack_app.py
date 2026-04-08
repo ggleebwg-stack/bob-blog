@@ -27,6 +27,8 @@ def verify_slack_signature(
     secret: str,
 ) -> bool:
     """Return True only when the HMAC-SHA256 signature is valid and fresh."""
+    if not secret:
+        return False
     try:
         ts = int(timestamp)
     except (ValueError, TypeError):
