@@ -371,7 +371,17 @@ def build_full_html(article: dict, body_html: str, toc_html: str) -> str:
     if disclaimer_html:
         html_parts.append(disclaimer_html)
 
-    return '\n\n'.join(html_parts)
+    html = '\n\n'.join(html_parts)
+
+    # 수익화 레이어 (AdSense + Coupang Partners)
+    from monetization import apply_monetization
+    post_meta = {
+        "topic": article.get("title", ""),
+        "keywords": article.get("coupang_keywords") or article.get("tags") or [],
+    }
+    html = apply_monetization(html, post_meta)
+
+    return html
 
 
 # ─── Blogger API ──────────────────────────────────────
