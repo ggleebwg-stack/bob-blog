@@ -36,6 +36,9 @@ app.include_router(api_settings.router, prefix="/api")
 app.include_router(api_connections.router, prefix="/api")
 app.include_router(api_logs.router, prefix="/api")
 
+from integrations.slack_app import router as slack_router  # noqa: E402
+app.include_router(slack_router, prefix="/slack")
+
 
 @app.get("/api/health")
 async def health():
