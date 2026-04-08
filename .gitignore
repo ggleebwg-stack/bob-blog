@@ -36,6 +36,10 @@ data/published/*
 .claude/
 repo/
 
+node_modules/
+dist/
+.vite/
+
 .vscode/
 .idea/
 Thumbs.db
